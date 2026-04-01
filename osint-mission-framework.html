@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSINT Mission Framework</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13151c;
+    --bg3: #1a1d27;
+    --bg4: #20243200;
+    --surface: #1e2230;
+    --surface2: #252a3a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --text2: #8a8fa8;
+    --text3: #565b72;
+    --accent: #4f9cf9;
+    --accent2: #2563eb;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  .shell { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .logo {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo .wordmark {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .logo h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .logo p {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 3px;
+  }
+
+  /* View toggle */
+  .view-toggle {
+    display: flex;
+    margin: 12px 12px 0;
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .view-btn {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 11px;
+    font-family: var(--sans);
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--text3);
+    letter-spacing: 0.02em;
+  }
+  .view-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 8px 12px; }
+  .sidebar-nav::-webkit-scrollbar { width: 4px; }
+  .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 12px 8px 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.12s;
+    border: 1px solid transparent;
+    margin-bottom: 1px;
+  }
+  .nav-item:hover { background: var(--surface); }
+  .nav-item.active {
+    background: var(--surface2);
+    border-color: var(--border2);
+  }
+
+  .nav-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .nav-text { flex: 1; min-width: 0; }
+  .nav-text .label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nav-text .count {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .search-wrap {
+    flex: 1;
+    max-width: 480px;
+    position: relative;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.35;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 12px 8px 36px;
+    font-size: 13px;
+    font-family: var(--sans);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus { border-color: var(--accent); }
+
+  .filter-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.12s;
+    font-family: var(--sans);
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.active { background: var(--accent2); border-color: var(--accent); color: white; }
+
+  /* ── CONTENT ── */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+  .content::-webkit-scrollbar { width: 6px; }
+  .content::-webkit-scrollbar-track { background: transparent; }
+  .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* Mission header */
+  .mission-header {
+    margin-bottom: 24px;
+  }
+  .mission-header-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .mission-icon-lg {
+    width: 52px;
+    height: 52px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .mission-meta h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .mission-meta p {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+    max-width: 560px;
+  }
+  .mission-stats {
+    margin-top: 10px;
+    display: flex;
+    gap: 16px;
+  }
+  .stat { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .stat span { color: var(--text2); font-weight: 700; }
+
+  /* Phase sections */
+  .phase-section { margin-bottom: 28px; }
+  .phase-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .phase-label .line {
+    height: 1px;
+    flex: 1;
+    background: var(--border);
+  }
+  .phase-label .badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    text-transform: uppercase;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+  .phase-label .step-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+
+  /* Tool grid */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+  }
+
+  .tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    display: flex;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .tool-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .tool-card:hover {
+    border-color: var(--border2);
+    background: var(--surface2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
+  .tool-card:hover::before { opacity: 1; }
+
+  .tool-favicon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+
+  .tool-info { flex: 1; min-width: 0; }
+  .tool-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tool-desc {
+    font-size: 11px;
+    color: var(--text3);
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .tag {
+    font-size: 9px;
+    font-weight: 700;
+    font-family: var(--mono);
+    padding: 1px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .tag-r { background: rgba(239,155,39,0.15); color: #ef9b27; }
+  .tag-t { background: rgba(79,156,249,0.15); color: #4f9cf9; }
+  .tag-d { background: rgba(138,111,246,0.15); color: #8a6ff6; }
+  .tag-f { background: rgba(52,199,89,0.12); color: #34c759; }
+
+  /* Tag legend */
+  .legend {
+    display: flex;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    border: 1px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+
+  /* Empty state */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+    text-align: center;
+    gap: 8px;
+  }
+  .empty .icon { font-size: 36px; margin-bottom: 8px; opacity: 0.4; }
+  .empty h3 { font-size: 16px; font-weight: 500; color: var(--text2); }
+  .empty p { font-size: 13px; color: var(--text3); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  /* Scan lines bg texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.008) 2px,
+      rgba(255,255,255,0.008) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .shell { position: relative; z-index: 1; }
+
+  /* mission color accents */
+  [data-mission="missing-person"] { --mc: #4f9cf9; --mc-bg: rgba(79,156,249,0.08); }
+  [data-mission="missing-children"] { --mc: #fa7185; --mc-bg: rgba(250,113,133,0.08); }
+  [data-mission="privacy-leaks"] { --mc: #8a6ff6; --mc-bg: rgba(138,111,246,0.08); }
+  [data-mission="background-check"] { --mc: #34c759; --mc-bg: rgba(52,199,89,0.08); }
+  [data-mission="corporate-intel"] { --mc: #ef9b27; --mc-bg: rgba(239,155,39,0.08); }
+  [data-mission="location-tracking"] { --mc: #32d5c2; --mc-bg: rgba(50,213,194,0.08); }
+  [data-mission="disinfo"] { --mc: #ff6b35; --mc-bg: rgba(255,107,53,0.08); }
+  [data-mission="dark-web"] { --mc: #c850c0; --mc-bg: rgba(200,80,192,0.08); }
+
+  .mission-header-inner { border-color: var(--mc, var(--border)); background: var(--mc-bg, var(--surface)); }
+  .mission-icon-lg { background: var(--mc-bg, var(--surface2)); }
+  .tool-card::before { background: var(--mc, var(--accent)); }
+  .phase-label .step-num { border-color: var(--mc, var(--border2)); color: var(--mc, var(--text3)); }
+
+  /* Tree view styles */
+  .tree-view { padding: 8px 0; }
+  .tree-node { }
+  .tree-node-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text2);
+    transition: all 0.1s;
+  }
+  .tree-node-header:hover { background: var(--surface); color: var(--text); }
+  .tree-node-header .arrow {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+    opacity: 0.5;
+  }
+  .tree-node.open > .tree-node-header .arrow { transform: rotate(90deg); }
+  .tree-children { padding-left: 18px; display: none; }
+  .tree-node.open > .tree-children { display: block; }
+  .tree-leaf {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text3);
+    transition: all 0.1s;
+    text-decoration: none;
+  }
+  .tree-leaf:hover { background: var(--surface); color: var(--text); }
+  .tree-leaf::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+  }
+
+  .info-banner {
+    background: rgba(79,156,249,0.07);
+    border: 1px solid rgba(79,156,249,0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 220px; min-width: 220px; }
+    .tool-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="wordmark">OSINT Framework</div>
+      <h1>Mission Intelligence</h1>
+      <p>Goal-driven investigative toolkit</p>
+    </div>
+
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-mission" onclick="setView('mission')">Mission View</button>
+      <button class="view-btn" id="btn-classic" onclick="setView('classic')">Classic Tree</button>
+    </div>
+
+    <div class="sidebar-nav" id="sidebar-nav"></div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="search-input" id="search" type="text" placeholder="Search tools, missions, categories…" oninput="onSearch(this.value)">
+      </div>
+      <div class="filter-chips" id="filter-chips"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const MISSIONS = [
+  {
+    id: 'missing-person',
+    icon: '🔍',
+    label: 'Missing Person Search',
+    desc: 'Locate individuals who have disappeared or whose whereabouts are unknown. Combines identity, social, and physical location intelligence into a structured workflow.',
+    tags: ['identity', 'social', 'location'],
+    phases: [
+      {
+        label: 'Phase 1 — Identity Anchors',
+        desc: 'Start by establishing digital identifiers: username, email, phone.',
+        tools: [
+          { name: 'WhatsMyName', url: 'https://whatsmyname.app', desc: 'Search for a username across 600+ social platforms simultaneously.', flags: [], icon: '👤' },
+          { name: 'Sherlock', url: 'https://github.com/sherlock-project/sherlock', desc: 'CLI tool to hunt down social media accounts by username.', flags: ['T'], icon: '🕵️' },
+          { name: 'Hunter.io', url: 'https://hunter.io', desc: 'Find email addresses associated with a name and organization.', flags: ['R'], icon: '📧' },
+          { name: 'Spokeo', url: 'https://www.spokeo.com', desc: 'Reverse phone / email / name lookup with address history.', flags: ['R'], icon: '📋' },
+          { name: 'TruePeopleSearch', url: 'https://www.truepeoplesearch.com', desc: 'Free people search: name, phone, address cross-reference.', flags: [], icon: '🗂️' },
+          { name: 'Pipl', url: 'https://pipl.com', desc: 'Deep people search engine aggregating social, professional, and public data.', flags: ['R'], icon: '🔎' },
+        ]
+      },
+      {
+        label: 'Phase 2 — Social Media Footprint',
+        desc: 'Map the subject\'s social presence, last activity, and network.',
+        tools: [
+          { name: 'Social Searcher', url: 'https://www.social-searcher.com', desc: 'Real-time social media search across all major networks.', flags: [], icon: '📡' },
+          { name: 'Snapchat Map', url: 'https://map.snapchat.com', desc: 'View public Snapchat stories by location on a live map.', flags: [], icon: '👻' },
+          { name: 'IntelX', url: 'https://intelx.io', desc: 'Search across leaked databases, darknet, social and documents.', flags: ['R'], icon: '🧮' },
+          { name: 'Facebook Graph Search', url: 'https://www.facebook.com/search', desc: 'Search posts, check-ins, and tagged photos by person.', flags: ['R'], icon: '📘' },
+          { name: 'Twitter Advanced Search', url: 'https://twitter.com/search-advanced', desc: 'Search tweets by user, date range, location, or keywords.', flags: [], icon: '🐦' },
+          { name: 'Instagram Osintgram', url: 'https://github.com/Datalux/Osintgram', desc: 'CLI tool to extract Instagram profile data and connections.', flags: ['T'], icon: '📸' },
+        ]
+      },
+      {
+        label: 'Phase 3 — Physical Location Intel',
+        desc: 'Narrow physical location using geolocation, imagery, and records.',
+        tools: [
+          { name: 'GeoSpy', url: 'https://geospy.ai', desc: 'AI-powered image geolocation — identify where a photo was taken.', flags: [], icon: '🌍' },
+          { name: 'Google Street View', url: 'https://www.google.com/maps', desc: 'Visual cross-reference for background elements in photos.', flags: [], icon: '🗺️' },
+          { name: 'Skyscanner Airports', url: 'https://www.skyscanner.net', desc: 'Track likely transit hubs if subject was traveling.', flags: [], icon: '✈️' },
+          { name: 'PeekYou', url: 'https://www.peekyou.com', desc: 'Cross-reference profiles to extract location mentions.', flags: [], icon: '🏙️' },
+          { name: 'Melissa Lookups', url: 'https://www.melissa.com/lookups', desc: 'Reverse address, ZIP, and phone for location history.', flags: [], icon: '📬' },
+          { name: 'OpenStreetMap', url: 'https://www.openstreetmap.org', desc: 'Open map for background element identification in photos.', flags: [], icon: '🗾' },
+        ]
+      },
+      {
+        label: 'Phase 4 — Cross-Reference & Verification',
+        desc: 'Corroborate findings across official and financial records.',
+        tools: [
+          { name: 'FamilySearch', url: 'https://www.familysearch.org', desc: 'Public genealogy records, birth, death, and marriage data.', flags: ['R'], icon: '🌳' },
+          { name: 'Ancestry.com', url: 'https://www.ancestry.com', desc: 'Genealogy, obituaries, and migration records.', flags: ['R'], icon: '📜' },
+          { name: 'Find A Grave', url: 'https://www.findagrave.com', desc: 'Search for deceased individuals and burial location.', flags: [], icon: '⚰️' },
+          { name: 'PACER', url: 'https://pacer.uscourts.gov', desc: 'US federal court records — civil, bankruptcy, criminal cases.', flags: ['R'], icon: '⚖️' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'missing-children',
+    icon: '🧒',
+    label: 'Missing Children',
+    desc: 'Specialized workflow for locating missing minors. Integrates with AMBER Alert networks, child welfare databases, and NGO resources alongside standard investigative tools.',
+    tags: ['children', 'alerts', 'welfare'],
+    phases: [
+      {
+        label: 'Phase 1 — Official Alert Systems',
+        desc: 'Check all national and regional official missing child registries first.',
+        tools: [
+          { name: 'NCMEC CyberTipline', url: 'https://www.missingkids.org/gethelpnow/cybertipline', desc: 'National Center for Missing & Exploited Children — primary US registry.', flags: [], icon: '🚨' },
+          { name: 'AMBER Alert', url: 'https://www.amberalert.gov', desc: 'Official AMBER Alert system — search active and archived alerts.', flags: [], icon: '📣' },
+          { name: 'INTERPOL Missing Persons', url: 'https://www.interpol.int/en/How-we-work/Notices/Missing-Persons', desc: 'International missing persons database with photo galleries.', flags: [], icon: '🌐' },
+          { name: 'Missing Kids (Canada)', url: 'https://www.missingkids.ca', desc: 'Canadian Centre for Child Protection — national registry.', flags: [], icon: '🍁' },
+          { name: 'NamUs', url: 'https://namus.nij.ojp.gov', desc: 'US national missing and unidentified persons system — federated database.', flags: [], icon: '🆔' },
+        ]
+      },
+      {
+        label: 'Phase 2 — Digital Trail',
+        desc: 'Minors often maintain hidden social accounts. Broaden username sweep.',
+        tools: [
+          { name: 'WhatsMyName', url: 'https://whatsmyname.app', desc: 'Search usernames across platforms — check gaming handles too.', flags: [], icon: '👤' },
+          { name: 'Discord Lookup', url: 'https://discordlookup.com', desc: 'Public Discord profile search — common platform for minors.', flags: [], icon: '💬' },
+          { name: 'TikTok Search', url: 'https://www.tiktok.com/search', desc: 'Search TikTok by username, hashtag, or keyword.', flags: [], icon: '🎵' },
+          { name: 'Roblox User Search', url: 'https://www.roblox.com/search', desc: 'Search Roblox profiles and activity — major children\'s gaming platform.', flags: [], icon: '🎮' },
+          { name: 'Snapchat Map', url: 'https://map.snapchat.com', desc: 'Public Snap Map shows location-tagged stories.', flags: [], icon: '👻' },
+          { name: 'BeenVerified', url: 'https://www.beenverified.com', desc: 'Background + social network cross-reference for family/contacts.', flags: ['R'], icon: '✅' },
+        ]
+      },
+      {
+        label: 'Phase 3 — Family & Network Intel',
+        desc: 'Map family connections, school, and known associates.',
+        tools: [
+          { name: 'FamilySearch', url: 'https://www.familysearch.org', desc: 'Genealogy and family tree records — free.', flags: ['R'], icon: '🌳' },
+          { name: 'Pipl', url: 'https://pipl.com', desc: 'Deep web identity search — useful for family members of the child.', flags: ['R'], icon: '🔎' },
+          { name: 'Spokeo', url: 'https://www.spokeo.com', desc: 'Reverse lookup on family members to identify household members.', flags: ['R'], icon: '📋' },
+          { name: 'Whitepages', url: 'https://www.whitepages.com', desc: 'Phone/address lookup for known family contact tracing.', flags: [], icon: '📞' },
+        ]
+      },
+      {
+        label: 'Phase 4 — NGO & Hotlines',
+        desc: 'Coordinate with specialist organizations for case escalation.',
+        tools: [
+          { name: 'Team HOPE', url: 'https://www.teamhope.org', desc: 'Volunteer peer support for families of missing children.', flags: [], icon: '💙' },
+          { name: 'Polaris Project', url: 'https://polarisproject.org', desc: 'Anti-trafficking organization — resources and hotline referral.', flags: [], icon: '⭐' },
+          { name: 'Thorn', url: 'https://www.thorn.org', desc: 'Technology-focused child protection non-profit with investigative resources.', flags: [], icon: '🌹' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'privacy-leaks',
+    icon: '🔐',
+    label: 'Privacy Leak / Data Breach',
+    desc: 'Determine if personal data has been exposed in breaches or leaks. Covers credential exposure, doxing artifacts, paste sites, and dark web monitoring.',
+    tags: ['breaches', 'credentials', 'exposure'],
+    phases: [
+      {
+        label: 'Phase 1 — Credential Exposure',
+        desc: 'Check email, phone, and username against breach databases.',
+        tools: [
+          { name: 'Have I Been Pwned', url: 'https://haveibeenpwned.com', desc: 'The standard — checks email/phone across 700+ data breaches.', flags: [], icon: '💥' },
+          { name: 'DeHashed', url: 'https://www.dehashed.com', desc: 'Comprehensive breach search including passwords, usernames, IPs.', flags: ['R'], icon: '🔑' },
+          { name: 'IntelX', url: 'https://intelx.io', desc: 'Search leaked databases, paste sites, and darknet markets.', flags: ['R'], icon: '🧮' },
+          { name: 'LeakCheck', url: 'https://leakcheck.io', desc: 'Check email or username across major data leaks.', flags: ['R'], icon: '🚿' },
+          { name: 'BreachDirectory', url: 'https://breachdirectory.org', desc: 'Free breach search with partial password exposure check.', flags: [], icon: '📂' },
+          { name: 'Snusbase', url: 'https://snusbase.com', desc: 'Search by email, IP, username, password hash in breach data.', flags: ['R'], icon: '🗄️' },
+        ]
+      },
+      {
+        label: 'Phase 2 — Paste Site Monitoring',
+        desc: 'Search paste sites where leaked data is commonly published.',
+        tools: [
+          { name: 'Pastebin Search', url: 'https://pastebin.com/search', desc: 'Search Pastebin for mentions of email, name, or domain.', flags: [], icon: '📋' },
+          { name: 'PSBDMP', url: 'https://psbdmp.ws', desc: 'Search dumped Pastebin data — includes deleted pastes.', flags: [], icon: '🗑️' },
+          { name: 'GrayhatWarfare', url: 'https://grayhatwarfare.com', desc: 'Search exposed S3 buckets and cloud storage for data leaks.', flags: ['R'], icon: '☁️' },
+          { name: 'Grep.app', url: 'https://grep.app', desc: 'Search GitHub repos for exposed credentials or keys.', flags: [], icon: '🐙' },
+          { name: 'GitGuardian', url: 'https://www.gitguardian.com', desc: 'Detect secrets and credentials exposed in public code repositories.', flags: ['R'], icon: '💂' },
+        ]
+      },
+      {
+        label: 'Phase 3 — Dark Web Exposure',
+        desc: 'Check if data is being traded on darknet markets or forums.',
+        tools: [
+          { name: 'Tor2Web', url: 'https://www.tor2web.org', desc: 'Access .onion sites without installing Tor — for quick lookups.', flags: [], icon: '🧅' },
+          { name: 'Ahmia', url: 'https://ahmia.fi', desc: 'Clearnet search engine indexing Tor hidden services.', flags: [], icon: '🔭' },
+          { name: 'DarkSearch', url: 'https://darksearch.io', desc: 'Search engine for dark web content accessible via clearnet.', flags: [], icon: '🌑' },
+          { name: 'OnionSearch', url: 'https://github.com/megadose/OnionSearch', desc: 'CLI aggregator searching multiple dark web search engines.', flags: ['T'], icon: '🧅' },
+        ]
+      },
+      {
+        label: 'Phase 4 — Document & Metadata Leaks',
+        desc: 'Check if documents or metadata are inadvertently exposing private data.',
+        tools: [
+          { name: 'FOCA', url: 'https://github.com/ElevenPaths/FOCA', desc: 'Extract metadata from public documents (PDFs, Office, images).', flags: ['T'], icon: '📄' },
+          { name: 'ExifTool', url: 'https://exiftool.org', desc: 'Read metadata embedded in image and document files.', flags: ['T'], icon: '📸' },
+          { name: 'Metagoofil', url: 'https://github.com/laramies/metagoofil', desc: 'Metadata extraction from public documents via Google Dorks.', flags: ['T'], icon: '🔍' },
+          { name: 'Google Dork — filetype', url: 'https://www.google.com/search?q=filetype:pdf+site:target.com', desc: 'Find exposed documents: filetype:pdf site:domain.com', flags: ['D'], icon: '🔍' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'background-check',
+    icon: '🗂️',
+    label: 'Background Check',
+    desc: 'Build a comprehensive profile of an individual combining public records, criminal history, address history, employment, and financial data.',
+    tags: ['records', 'criminal', 'identity'],
+    phases: [
+      {
+        label: 'Phase 1 — Identity Verification',
+        desc: 'Confirm the subject\'s identity and basic biographical data.',
+        tools: [
+          { name: 'TruePeopleSearch', url: 'https://www.truepeoplesearch.com', desc: 'Free name/phone/address cross-reference people finder.', flags: [], icon: '🗂️' },
+          { name: 'Spokeo', url: 'https://www.spokeo.com', desc: 'Email, phone, address and social profile aggregator.', flags: ['R'], icon: '📋' },
+          { name: 'Intelius', url: 'https://www.intelius.com', desc: 'People search with address history and relative finder.', flags: ['R'], icon: '🔎' },
+          { name: 'WhitePages', url: 'https://www.whitepages.com', desc: 'Basic phone number and address lookup, US-focused.', flags: [], icon: '📞' },
+          { name: 'FastPeopleSearch', url: 'https://www.fastpeoplesearch.com', desc: 'Free people search with address history, relatives, and phone.', flags: [], icon: '⚡' },
+        ]
+      },
+      {
+        label: 'Phase 2 — Criminal & Court Records',
+        desc: 'Search public criminal, civil, and bankruptcy court records.',
+        tools: [
+          { name: 'PACER', url: 'https://pacer.uscourts.gov', desc: 'US federal court records — civil, criminal, and bankruptcy.', flags: ['R'], icon: '⚖️' },
+          { name: 'CourtListener', url: 'https://www.courtlistener.com', desc: 'Free access to millions of federal and state court opinions.', flags: [], icon: '📜' },
+          { name: 'National Sex Offender Registry', url: 'https://www.nsopw.gov', desc: 'US national sex offender public search database.', flags: [], icon: '⚠️' },
+          { name: 'BOP Inmate Locator', url: 'https://www.bop.gov/inmateloc', desc: 'Federal Bureau of Prisons inmate locator.', flags: [], icon: '🏛️' },
+          { name: 'Vinelink', url: 'https://www.vinelink.com', desc: 'Victim notification and offender custody status lookup.', flags: [], icon: '🔔' },
+        ]
+      },
+      {
+        label: 'Phase 3 — Professional & Financial',
+        desc: 'Verify employment, licensing, business associations, and finances.',
+        tools: [
+          { name: 'LinkedIn', url: 'https://www.linkedin.com/search', desc: 'Professional history, connections, and endorsements.', flags: ['R'], icon: '💼' },
+          { name: 'OpenCorporates', url: 'https://opencorporates.com', desc: 'Largest open database of company and officer records globally.', flags: [], icon: '🏢' },
+          { name: 'SEC EDGAR', url: 'https://efts.sec.gov/LATEST/search-index?q=%22name%22', desc: 'Search SEC filings for executive names and company associations.', flags: [], icon: '📈' },
+          { name: 'BizFilings', url: 'https://www.bizfilings.com', desc: 'Business registration and registered agent lookups.', flags: [], icon: '📋' },
+          { name: 'LicenseSearch', url: 'https://www.license.pro', desc: 'Professional license verification — doctors, lawyers, contractors.', flags: [], icon: '🪪' },
+        ]
+      },
+      {
+        label: 'Phase 4 — Property & Voter Records',
+        desc: 'Confirm address history through property and public records.',
+        tools: [
+          { name: 'Zillow', url: 'https://www.zillow.com', desc: 'Property ownership history, estimated values, and sales data.', flags: [], icon: '🏠' },
+          { name: 'County Assessor (SearchSystems)', url: 'https://publicrecords.searchsystems.net', desc: 'Directory of county assessor and public records systems.', flags: [], icon: '🗃️' },
+          { name: 'Voter Records (VoterRecords.com)', url: 'https://voterrecords.com', desc: 'Voter registration records where publicly available.', flags: [], icon: '🗳️' },
+          { name: 'OpenAddresses', url: 'https://openaddresses.io', desc: 'Open dataset of address data for cross-reference.', flags: [], icon: '📍' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'corporate-intel',
+    icon: '🏢',
+    label: 'Corporate Intelligence',
+    desc: 'Investigate companies and business entities — ownership structures, financials, employees, infrastructure, and competitive intelligence.',
+    tags: ['business', 'finance', 'infrastructure'],
+    phases: [
+      {
+        label: 'Phase 1 — Company Registration & Structure',
+        desc: 'Identify legal entity, officers, registered agents, and subsidiaries.',
+        tools: [
+          { name: 'OpenCorporates', url: 'https://opencorporates.com', desc: '200M+ company records across 140 jurisdictions — free search.', flags: [], icon: '🏢' },
+          { name: 'SEC EDGAR', url: 'https://www.sec.gov/cgi-bin/browse-edgar', desc: 'US public company filings — 10-K, 10-Q, ownership, executives.', flags: [], icon: '📈' },
+          { name: 'Companies House (UK)', url: 'https://find-and-update.company-information.service.gov.uk', desc: 'UK company registry — free director and filing search.', flags: [], icon: '🇬🇧' },
+          { name: 'Dun & Bradstreet', url: 'https://www.dnb.com', desc: 'Business credit, risk, and corporate hierarchy data.', flags: ['R'], icon: '📊' },
+          { name: 'OpenSanctions', url: 'https://www.opensanctions.org', desc: 'Sanctions, PEP, and regulatory watchlist database.', flags: [], icon: '🚫' },
+        ]
+      },
+      {
+        label: 'Phase 2 — Technical Infrastructure',
+        desc: 'Map the company\'s domains, servers, technologies, and exposure.',
+        tools: [
+          { name: 'Shodan', url: 'https://www.shodan.io', desc: 'Search engine for internet-connected devices and open ports.', flags: ['R'], icon: '🔌' },
+          { name: 'BuiltWith', url: 'https://builtwith.com', desc: 'Technology stack of any website — CMS, analytics, CDN.', flags: [], icon: '⚙️' },
+          { name: 'Censys', url: 'https://search.censys.io', desc: 'Scan internet for hosts, certificates, and open services.', flags: ['R'], icon: '🌐' },
+          { name: 'DNSDumpster', url: 'https://dnsdumpster.com', desc: 'Free domain research and DNS record discovery tool.', flags: [], icon: '📡' },
+          { name: 'Wayback Machine', url: 'https://web.archive.org', desc: 'Historical snapshots of websites — see how a company has changed.', flags: [], icon: '⏮️' },
+          { name: 'crt.sh', url: 'https://crt.sh', desc: 'Certificate transparency logs — enumerate subdomains via SSL certs.', flags: [], icon: '🔒' },
+        ]
+      },
+      {
+        label: 'Phase 3 — Financial & Litigation',
+        desc: 'Examine financial disclosures, litigation history, and liens.',
+        tools: [
+          { name: 'CourtListener', url: 'https://www.courtlistener.com', desc: 'Federal and state court opinions and dockets — free.', flags: [], icon: '📜' },
+          { name: 'PACER', url: 'https://pacer.uscourts.gov', desc: 'Federal court records including commercial litigation.', flags: ['R'], icon: '⚖️' },
+          { name: 'Pitchbook (free tier)', url: 'https://pitchbook.com', desc: 'Startup funding, investors, and valuation data.', flags: ['R'], icon: '💰' },
+          { name: 'Crunchbase', url: 'https://www.crunchbase.com', desc: 'Startup and investor profiles, funding rounds, acquisitions.', flags: ['R'], icon: '🚀' },
+          { name: 'OFAC Sanctions', url: 'https://sanctionssearch.ofac.treas.gov', desc: 'US Treasury OFAC sanctions list search.', flags: [], icon: '💵' },
+        ]
+      },
+      {
+        label: 'Phase 4 — People & Key Employees',
+        desc: 'Identify key decision-makers, executives, and their connections.',
+        tools: [
+          { name: 'LinkedIn', url: 'https://www.linkedin.com/search/results/people', desc: 'Employee discovery, org chart inference, career history.', flags: ['R'], icon: '💼' },
+          { name: 'Hunter.io', url: 'https://hunter.io', desc: 'Find email addresses of employees at a company.', flags: ['R'], icon: '📧' },
+          { name: 'Clearbit Connect', url: 'https://clearbit.com', desc: 'Email enrichment and company intelligence API.', flags: ['R'], icon: '🔗' },
+          { name: 'Little Sis', url: 'https://littlesis.org', desc: 'Database of power relationships between people and organizations.', flags: [], icon: '🕸️' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'location-tracking',
+    icon: '📍',
+    label: 'Physical Location Intel',
+    desc: 'Geolocate subjects, verify claimed locations, identify photos, and map physical presence using geospatial, imagery, and public tracking data.',
+    tags: ['geolocation', 'imagery', 'tracking'],
+    phases: [
+      {
+        label: 'Phase 1 — Image Geolocation',
+        desc: 'Identify the location where a photo or video was taken.',
+        tools: [
+          { name: 'GeoSpy', url: 'https://geospy.ai', desc: 'AI-powered image geolocation — identify location from photo content.', flags: [], icon: '🌍' },
+          { name: 'Google Reverse Image', url: 'https://images.google.com', desc: 'Reverse image search to find source and location context.', flags: [], icon: '🖼️' },
+          { name: 'Yandex Images', url: 'https://yandex.com/images', desc: 'Often more effective than Google for faces and Eastern Europe.', flags: [], icon: '🔍' },
+          { name: 'SunCalc', url: 'https://www.suncalc.org', desc: 'Calculate sun position to estimate photo time/location from shadows.', flags: [], icon: '☀️' },
+          { name: 'GeoGuessr (training)', url: 'https://www.geoguessr.com', desc: 'Train visual geolocation skills — recognizing signs, flora, road markings.', flags: [], icon: '🎯' },
+          { name: 'Mapillary', url: 'https://www.mapillary.com', desc: 'Crowd-sourced street-level imagery — alternative to Street View.', flags: [], icon: '📷' },
+        ]
+      },
+      {
+        label: 'Phase 2 — IP & Network Geolocation',
+        desc: 'Geolocate IP addresses and identify network infrastructure.',
+        tools: [
+          { name: 'IPinfo', url: 'https://ipinfo.io', desc: 'Comprehensive IP geolocation, ISP, and ASN lookup.', flags: [], icon: '🌐' },
+          { name: 'MaxMind GeoIP', url: 'https://www.maxmind.com/en/geoip-demo', desc: 'Industry-standard IP geolocation database with demo.', flags: [], icon: '🗺️' },
+          { name: 'Shodan', url: 'https://www.shodan.io', desc: 'IP intelligence including open ports, services, and location.', flags: ['R'], icon: '🔌' },
+          { name: 'Greynoise', url: 'https://viz.greynoise.io', desc: 'Distinguish targeted activity from internet background noise.', flags: ['R'], icon: '📊' },
+          { name: 'AbuseIPDB', url: 'https://www.abuseipdb.com', desc: 'Check IP against reported abuse activity and geolocation.', flags: [], icon: '🚨' },
+        ]
+      },
+      {
+        label: 'Phase 3 — Social Location Signals',
+        desc: 'Extract location from social media, check-ins, and metadata.',
+        tools: [
+          { name: 'Snapchat Map', url: 'https://map.snapchat.com', desc: 'Public Snap Map — live story heat map by location.', flags: [], icon: '👻' },
+          { name: 'Instagram Location Search', url: 'https://www.instagram.com/explore/locations', desc: 'Browse photos tagged at a specific location or venue.', flags: ['R'], icon: '📸' },
+          { name: 'Twitter Geolocated Search', url: 'https://twitter.com/search', desc: 'Search for tweets from a specific location using geocode operator.', flags: [], icon: '🐦' },
+          { name: 'Wigle', url: 'https://wigle.net', desc: 'Database of wireless networks by location — SSID geolocation.', flags: ['R'], icon: '📶' },
+          { name: 'ExifTool', url: 'https://exiftool.org', desc: 'Extract GPS metadata embedded in photos by the subject.', flags: ['T'], icon: '📷' },
+        ]
+      },
+      {
+        label: 'Phase 4 — Flight, Maritime & Vehicle',
+        desc: 'Track transport assets and movements.',
+        tools: [
+          { name: 'FlightAware', url: 'https://flightaware.com', desc: 'Live and historical flight tracking including private jets.', flags: [], icon: '✈️' },
+          { name: 'MarineTraffic', url: 'https://www.marinetraffic.com', desc: 'Live AIS ship tracking and port movement history.', flags: [], icon: '🚢' },
+          { name: 'NHTSA VIN Decoder', url: 'https://vpic.nhtsa.dot.gov/decoder', desc: 'Decode vehicle VIN to manufacturer, year, model, and specs.', flags: [], icon: '🚗' },
+          { name: 'Plane Finder', url: 'https://planefinder.net', desc: 'Live flight radar with ICAO hex code search.', flags: [], icon: '🛩️' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'disinfo',
+    icon: '📰',
+    label: 'Disinformation / Fake Accounts',
+    desc: 'Detect fake social accounts, coordinated inauthentic behavior, image manipulation, and track the origin and spread of disinformation narratives.',
+    tags: ['fake accounts', 'deepfakes', 'media'],
+    phases: [
+      {
+        label: 'Phase 1 — Account Authenticity',
+        desc: 'Assess whether a social media account is genuine or fabricated.',
+        tools: [
+          { name: 'Botometer', url: 'https://botometer.osome.iu.edu', desc: 'Score the likelihood that a Twitter account is a bot.', flags: [], icon: '🤖' },
+          { name: 'Twitter Audit', url: 'https://www.twitteraudit.com', desc: 'Estimate the percentage of fake followers on a Twitter account.', flags: [], icon: '🐦' },
+          { name: 'Account Analysis', url: 'https://accountanalysis.app', desc: 'Deep Twitter account analysis — posting patterns, activity timeline.', flags: [], icon: '📊' },
+          { name: 'SocialBlade', url: 'https://socialblade.com', desc: 'Track follower growth/decline anomalies across platforms.', flags: [], icon: '📈' },
+          { name: 'Wayback Machine', url: 'https://web.archive.org', desc: 'Check how a profile looked in the past — detect retroactive changes.', flags: [], icon: '⏮️' },
+        ]
+      },
+      {
+        label: 'Phase 2 — Image & Video Verification',
+        desc: 'Detect manipulated, AI-generated, or misattributed media.',
+        tools: [
+          { name: 'FotoForensics', url: 'https://fotoforensics.com', desc: 'Error Level Analysis to detect image manipulation artifacts.', flags: [], icon: '🔬' },
+          { name: 'Google Reverse Image', url: 'https://images.google.com', desc: 'Find earlier instances of an image to check its true origin.', flags: [], icon: '🖼️' },
+          { name: 'TinEye', url: 'https://tineye.com', desc: 'Reverse image search with earliest appearance date tracking.', flags: [], icon: '👁️' },
+          { name: 'Yandex Images', url: 'https://yandex.com/images', desc: 'Often finds matches Google misses, especially faces.', flags: [], icon: '🔍' },
+          { name: 'InVID/WeVerify', url: 'https://weverify.eu/verification-plugin', desc: 'Browser extension for verifying images and videos — journalist standard.', flags: ['T'], icon: '✅' },
+          { name: 'Hive Moderation AI Detection', url: 'https://hivemoderation.com/ai-generated-content-detection', desc: 'Detect AI-generated images, text, and deepfakes.', flags: ['R'], icon: '🧠' },
+        ]
+      },
+      {
+        label: 'Phase 3 — Narrative Tracking',
+        desc: 'Trace how a narrative or piece of content spreads across the web.',
+        tools: [
+          { name: 'CrowdTangle', url: 'https://www.crowdtangle.com', desc: 'Track content spread across Facebook and Instagram (media orgs).', flags: ['R'], icon: '📡' },
+          { name: 'BuzzSumo', url: 'https://buzzsumo.com', desc: 'Track content virality and sharing patterns across social.', flags: ['R'], icon: '🐝' },
+          { name: 'GDELT Project', url: 'https://www.gdeltproject.org', desc: 'Real-time global news event database — track story spread.', flags: [], icon: '🌍' },
+          { name: 'MediaBias/FactCheck', url: 'https://mediabiasfactcheck.com', desc: 'Database of news source credibility and bias ratings.', flags: [], icon: '📰' },
+          { name: 'Snopes', url: 'https://www.snopes.com', desc: 'Fact-check archive — search for claims already investigated.', flags: [], icon: '🔎' },
+        ]
+      },
+      {
+        label: 'Phase 4 — Domain & Attribution',
+        desc: 'Identify who registered and controls websites spreading disinformation.',
+        tools: [
+          { name: 'WHOIS (ICANN)', url: 'https://lookup.icann.org', desc: 'Domain registration data — registrar, creation date, contact.', flags: [], icon: '📋' },
+          { name: 'DomainTools', url: 'https://whois.domaintools.com', desc: 'WHOIS with historical ownership and connected domain mapping.', flags: ['R'], icon: '🔗' },
+          { name: 'Wayback Machine', url: 'https://web.archive.org', desc: 'Historical website content — see original content before clean-up.', flags: [], icon: '⏮️' },
+          { name: 'ViewDNS.info', url: 'https://viewdns.info', desc: 'Reverse IP lookup to find other sites on the same server.', flags: [], icon: '🌐' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'dark-web',
+    icon: '🌑',
+    label: 'Dark Web & Threat Intel',
+    desc: 'Monitor dark web forums, marketplaces, and infrastructure for threats, stolen data, and illicit activity related to a target or organization.',
+    tags: ['darknet', 'threat', 'monitoring'],
+    phases: [
+      {
+        label: 'Phase 1 — Dark Web Search',
+        desc: 'Search dark web content without running Tor locally.',
+        tools: [
+          { name: 'Ahmia', url: 'https://ahmia.fi', desc: 'Clearnet search engine indexing Tor hidden services — safe entry point.', flags: [], icon: '🔭' },
+          { name: 'DarkSearch', url: 'https://darksearch.io', desc: 'Index of dark web pages accessible from clearnet.', flags: [], icon: '🌑' },
+          { name: 'Torch (via Tor)', url: 'http://torchdeedp3i2jigzjdmfpn5ttjhthh5wbmda2rr3jvqjg5p77c54dqd.onion', desc: 'One of the oldest Tor search engines — requires Tor Browser.', flags: ['T'], icon: '🔦' },
+          { name: 'OnionSearch', url: 'https://github.com/megadose/OnionSearch', desc: 'Aggregates multiple dark web search engines via CLI.', flags: ['T'], icon: '🧅' },
+        ]
+      },
+      {
+        label: 'Phase 2 — Threat Intelligence Feeds',
+        desc: 'Check threat intel platforms for indicators of compromise or active threats.',
+        tools: [
+          { name: 'VirusTotal', url: 'https://www.virustotal.com', desc: 'Analyze URLs, IPs, hashes, and files against 70+ threat engines.', flags: [], icon: '🦠' },
+          { name: 'OTX AlienVault', url: 'https://otx.alienvault.com', desc: 'Open threat exchange — IOCs, campaigns, and threat actor profiles.', flags: ['R'], icon: '👾' },
+          { name: 'Shodan', url: 'https://www.shodan.io', desc: 'Search for known C2 infrastructure and malicious servers.', flags: ['R'], icon: '🔌' },
+          { name: 'IBM X-Force', url: 'https://exchange.xforce.ibmcloud.com', desc: 'Threat intelligence, malware reports, and IP reputation.', flags: ['R'], icon: '💻' },
+          { name: 'MalwareBazaar', url: 'https://bazaar.abuse.ch', desc: 'Repository of malware samples — search by hash, tag, or family.', flags: [], icon: '🧪' },
+        ]
+      },
+      {
+        label: 'Phase 3 — Leaked Credential Monitoring',
+        desc: 'Monitor for organizational credentials appearing in darknet trading.',
+        tools: [
+          { name: 'IntelX', url: 'https://intelx.io', desc: 'Indexes leaked data including darknet market dumps.', flags: ['R'], icon: '🧮' },
+          { name: 'Have I Been Pwned', url: 'https://haveibeenpwned.com', desc: 'Check specific emails or domains for breach exposure.', flags: [], icon: '💥' },
+          { name: 'DeHashed', url: 'https://www.dehashed.com', desc: 'Comprehensive breach search — query by domain for bulk employee exposure.', flags: ['R'], icon: '🔑' },
+          { name: 'SpyCloud', url: 'https://spycloud.com', desc: 'Enterprise-grade stolen credential monitoring from darknet sources.', flags: ['R'], icon: '☁️' },
+        ]
+      },
+      {
+        label: 'Phase 4 — Infrastructure & Attribution',
+        desc: 'Track threat actor infrastructure and attribute dark web activity.',
+        tools: [
+          { name: 'Censys', url: 'https://search.censys.io', desc: 'Scan for C2 servers and malicious infrastructure fingerprints.', flags: ['R'], icon: '🌐' },
+          { name: 'MITRE ATT&CK', url: 'https://attack.mitre.org', desc: 'Adversary tactics, techniques, and procedures knowledge base.', flags: [], icon: '⚔️' },
+          { name: 'Maltego', url: 'https://www.maltego.com', desc: 'Link analysis and graph visualization for threat attribution.', flags: ['T', 'R'], icon: '🕸️' },
+          { name: 'SpiderFoot', url: 'https://github.com/smicallef/spiderfoot', desc: 'Automated OSINT collection with 200+ data modules — self-hostable.', flags: ['T'], icon: '🕷️' },
+        ]
+      }
+    ]
+  }
+];
+
+const CLASSIC_TREE = [
+  { label: 'Username', children: [
+    { name: 'WhatsMyName', url: 'https://whatsmyname.app' },
+    { name: 'Sherlock', url: 'https://github.com/sherlock-project/sherlock' },
+    { name: 'NameChk', url: 'https://namechk.com' },
+    { name: 'KnowEm', url: 'https://knowem.com' },
+  ]},
+  { label: 'Email Address', children: [
+    { name: 'Have I Been Pwned', url: 'https://haveibeenpwned.com' },
+    { name: 'Hunter.io', url: 'https://hunter.io' },
+    { name: 'EmailRep', url: 'https://emailrep.io' },
+    { name: 'IntelX', url: 'https://intelx.io' },
+    { name: 'Holehe', url: 'https://github.com/megadose/holehe' },
+  ]},
+  { label: 'Phone Number', children: [
+    { name: 'Spokeo', url: 'https://www.spokeo.com' },
+    { name: 'Whitepages', url: 'https://www.whitepages.com' },
+    { name: 'NumLookup', url: 'https://www.numlookup.com' },
+    { name: 'Carrier Lookup', url: 'https://www.carrierlookup.com' },
+  ]},
+  { label: 'Social Networks', children: [
+    { label: 'Twitter/X', children: [
+      { name: 'Advanced Search', url: 'https://twitter.com/search-advanced' },
+      { name: 'Botometer', url: 'https://botometer.osome.iu.edu' },
+      { name: 'Account Analysis', url: 'https://accountanalysis.app' },
+    ]},
+    { label: 'Instagram', children: [
+      { name: 'Osintgram', url: 'https://github.com/Datalux/Osintgram' },
+      { name: 'Location Search', url: 'https://www.instagram.com/explore/locations' },
+    ]},
+    { label: 'LinkedIn', children: [
+      { name: 'LinkedIn Search', url: 'https://www.linkedin.com/search' },
+      { name: 'Hunter.io', url: 'https://hunter.io' },
+    ]},
+  ]},
+  { label: 'IP Address / Geolocation', children: [
+    { name: 'IPinfo', url: 'https://ipinfo.io' },
+    { name: 'Shodan', url: 'https://www.shodan.io' },
+    { name: 'Censys', url: 'https://search.censys.io' },
+    { name: 'AbuseIPDB', url: 'https://www.abuseipdb.com' },
+    { name: 'Wigle', url: 'https://wigle.net' },
+  ]},
+  { label: 'Domain / DNS', children: [
+    { name: 'WHOIS ICANN', url: 'https://lookup.icann.org' },
+    { name: 'DNSDumpster', url: 'https://dnsdumpster.com' },
+    { name: 'ViewDNS', url: 'https://viewdns.info' },
+    { name: 'crt.sh', url: 'https://crt.sh' },
+    { name: 'DomainTools', url: 'https://whois.domaintools.com' },
+  ]},
+  { label: 'Documents / Metadata', children: [
+    { name: 'FOCA', url: 'https://github.com/ElevenPaths/FOCA' },
+    { name: 'ExifTool', url: 'https://exiftool.org' },
+    { name: 'Metagoofil', url: 'https://github.com/laramies/metagoofil' },
+  ]},
+  { label: 'Public Records', children: [
+    { name: 'CourtListener', url: 'https://www.courtlistener.com' },
+    { name: 'PACER', url: 'https://pacer.uscourts.gov' },
+    { name: 'OpenCorporates', url: 'https://opencorporates.com' },
+    { name: 'SEC EDGAR', url: 'https://www.sec.gov' },
+    { name: 'FamilySearch', url: 'https://www.familysearch.org' },
+  ]},
+  { label: 'Imagery / Maps', children: [
+    { name: 'GeoSpy', url: 'https://geospy.ai' },
+    { name: 'Google Street View', url: 'https://www.google.com/maps' },
+    { name: 'Mapillary', url: 'https://www.mapillary.com' },
+    { name: 'SunCalc', url: 'https://www.suncalc.org' },
+    { name: 'OpenStreetMap', url: 'https://www.openstreetmap.org' },
+  ]},
+  { label: 'Dark Web', children: [
+    { name: 'Ahmia', url: 'https://ahmia.fi' },
+    { name: 'DarkSearch', url: 'https://darksearch.io' },
+    { name: 'OnionSearch', url: 'https://github.com/megadose/OnionSearch' },
+  ]},
+  { label: 'Threat Intelligence', children: [
+    { name: 'VirusTotal', url: 'https://www.virustotal.com' },
+    { name: 'OTX AlienVault', url: 'https://otx.alienvault.com' },
+    { name: 'MalwareBazaar', url: 'https://bazaar.abuse.ch' },
+    { name: 'MITRE ATT&CK', url: 'https://attack.mitre.org' },
+  ]},
+  { label: 'Vehicle / Transport', children: [
+    { name: 'FlightAware', url: 'https://flightaware.com' },
+    { name: 'MarineTraffic', url: 'https://www.marinetraffic.com' },
+    { name: 'NHTSA VIN Decoder', url: 'https://vpic.nhtsa.dot.gov' },
+  ]},
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let state = {
+  view: 'mission',
+  activeMission: MISSIONS[0].id,
+  search: '',
+  filter: ''
+};
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function setView(v) {
+  state.view = v;
+  document.getElementById('btn-mission').classList.toggle('active', v === 'mission');
+  document.getElementById('btn-classic').classList.toggle('active', v === 'classic');
+  renderSidebar();
+  renderContent();
+}
+
+function setMission(id) {
+  state.activeMission = id;
+  state.search = '';
+  state.filter = '';
+  document.getElementById('search').value = '';
+  renderSidebar();
+  renderContent();
+}
+
+function onSearch(val) {
+  state.search = val.toLowerCase();
+  renderContent();
+}
+
+function setFilter(tag) {
+  state.filter = state.filter === tag ? '' : tag;
+  renderFilterChips();
+  renderContent();
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  if (state.view === 'mission') {
+    nav.innerHTML = `<div class="nav-section-label">Missions</div>` +
+      MISSIONS.map(m => `
+        <div class="nav-item ${m.id === state.activeMission ? 'active' : ''}" onclick="setMission('${m.id}')">
+          <div class="nav-icon">${m.icon}</div>
+          <div class="nav-text">
+            <div class="label">${m.label}</div>
+            <div class="count">${m.phases.reduce((a,p) => a + p.tools.length, 0)} tools · ${m.phases.length} phases</div>
+          </div>
+        </div>
+      `).join('');
+  } else {
+    nav.innerHTML = `<div class="nav-section-label">Categories</div>` + renderTreeNodes(CLASSIC_TREE);
+  }
+}
+
+function renderTreeNodes(nodes, depth = 0) {
+  return nodes.map(node => {
+    if (node.children) {
+      return `<div class="tree-node" onclick="this.classList.toggle('open');event.stopPropagation()">
+        <div class="tree-node-header">
+          <svg class="arrow" viewBox="0 0 12 12" fill="currentColor"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ${node.label}
+        </div>
+        <div class="tree-children">${renderTreeNodes(node.children, depth+1)}</div>
+      </div>`;
+    } else {
+      return `<a class="tree-leaf" href="${node.url}" target="_blank" rel="noopener">${node.name}</a>`;
+    }
+  }).join('');
+}
+
+function renderFilterChips() {
+  const container = document.getElementById('filter-chips');
+  if (state.view !== 'mission') { container.innerHTML = ''; return; }
+  const mission = MISSIONS.find(m => m.id === state.activeMission);
+  if (!mission) { container.innerHTML = ''; return; }
+  container.innerHTML = mission.tags.map(tag =>
+    `<button class="chip ${state.filter === tag ? 'active' : ''}" onclick="setFilter('${tag}')">${tag}</button>`
+  ).join('');
+}
+
+function flagTag(flag) {
+  const map = { R: ['R','tag-r'], T: ['T','tag-t'], D: ['D','tag-d'], F: ['F','tag-f'] };
+  const [label, cls] = map[flag] || ['?',''];
+  const titles = { R: 'Requires registration', T: 'Run locally', D: 'Google Dork', F: 'Free' };
+  return `<span class="tag ${cls}" title="${titles[flag]||''}">${label}</span>`;
+}
+
+function renderContent() {
+  const content = document.getElementById('content');
+
+  if (state.view === 'classic') {
+    content.innerHTML = `
+      <div class="info-banner">
+        ℹ️ Classic tree view — tools organized by data type, as in the original OSINT Framework. Switch to <strong>Mission View</strong> for goal-driven workflows.
+      </div>
+      <div class="tree-view" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;">
+        ${renderTreeNodes(CLASSIC_TREE)}
+      </div>`;
+    renderFilterChips();
+    return;
+  }
+
+  const mission = MISSIONS.find(m => m.id === state.activeMission);
+  if (!mission) return;
+
+  const sq = state.search;
+  const sf = state.filter;
+
+  const filteredPhases = mission.phases.map(phase => ({
+    ...phase,
+    tools: phase.tools.filter(t => {
+      const matchSearch = !sq || t.name.toLowerCase().includes(sq) || t.desc.toLowerCase().includes(sq);
+      const matchFilter = !sf || mission.tags.some(tag => tag === sf && t.desc.toLowerCase().includes(sf));
+      return matchSearch && matchFilter;
+    })
+  })).filter(p => p.tools.length > 0);
+
+  const totalVisible = filteredPhases.reduce((a,p) => a + p.tools.length, 0);
+  const totalAll = mission.phases.reduce((a,p) => a + p.tools.length, 0);
+
+  content.innerHTML = `
+    <div class="mission-header">
+      <div class="mission-header-inner" data-mission="${mission.id}">
+        <div class="mission-icon-lg">${mission.icon}</div>
+        <div class="mission-meta">
+          <h2>${mission.label}</h2>
+          <p>${mission.desc}</p>
+          <div class="mission-stats">
+            <div class="stat"><span>${totalAll}</span> total tools</div>
+            <div class="stat"><span>${mission.phases.length}</span> investigative phases</div>
+            ${sq || sf ? `<div class="stat"><span>${totalVisible}</span> matching</div>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="tag tag-r">R</span> Requires registration</div>
+      <div class="legend-item"><span class="tag tag-t">T</span> Local install required</div>
+      <div class="legend-item"><span class="tag tag-d">D</span> Google Dork</div>
+    </div>
+
+    ${filteredPhases.length === 0 ? `
+      <div class="empty">
+        <div class="icon">🔍</div>
+        <h3>No tools match your search</h3>
+        <p>Try different keywords or clear filters</p>
+      </div>
+    ` : filteredPhases.map((phase, i) => `
+      <div class="phase-section" data-mission="${mission.id}">
+        <div class="phase-label">
+          <div class="step-num">${i+1}</div>
+          <span class="badge">${phase.label}</span>
+          <div class="line"></div>
+        </div>
+        <div class="tool-grid">
+          ${phase.tools.map(tool => `
+            <a class="tool-card" href="${tool.url}" target="_blank" rel="noopener" data-mission="${mission.id}">
+              <div class="tool-favicon">${tool.icon}</div>
+              <div class="tool-info">
+                <div class="tool-name">
+                  ${tool.name}
+                  ${(tool.flags||[]).map(flagTag).join('')}
+                </div>
+                <div class="tool-desc">${tool.desc}</div>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  renderFilterChips();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderSidebar();
+renderContent();
+renderFilterChips();
+</script>
+</body>
+</html>
